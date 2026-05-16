@@ -1,0 +1,41 @@
+# Generated outputs
+outputs/
+frame_reports/
+keyframes/
+
+# Local legacy/reference tree
+old_repo/
+
+# Local data and OS/cache noise
+data/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Demo input videos are large and should be stored outside Git.
+!demo/
+!demo/video7/
+!demo/video7/README.md
+!demo/video7/keyframes/
+!demo/video7/keyframes/**
+!demo/video7/frame_reports/
+!demo/video7/frame_reports/**
+!demo/video7/final_report/
+!demo/video7/final_report/**
+!demo/video7/input/
+demo/video7/input/*.mp4
+demo/video7/input/*.mov
+demo/video7/input/*.avi
+demo/video7/input/*.mkv
+
+# Python environments
+.venv/
+venv/
+env/
+rovenv/
+
+# Embedding/model caches
+embeddings_cache/
+**/embeddings_cache/
+*.npy
+*.npz
