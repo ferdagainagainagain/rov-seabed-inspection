@@ -1,0 +1,35 @@
+# Configuration for ROV Seabed Inspection — Video 1.
+#
+# Each section is consumed by one pipeline stage. CLI flags override these
+# values when given:
+#   python scripts/select_keyframes.py    --config configs/video1.yaml
+#   python scripts/analyze_keyframes_vlm.py --config configs/video1.yaml
+#   python scripts/synthesize_report.py   --config configs/video1.yaml
+
+keyframes:
+  video: data/VIDEO 7/videos/2025-05-13_11-25-23_DEEP_TREKKER_SD.mp4
+  output: outputs/keyframes_video7
+  sample_every_sec: 1.0
+  novelty_threshold: 0.3
+  min_gap_sec: 3
+  max_gap_sec: 120
+  depth_csv: data/VIDEO 7/data/depth_log.csv
+  min_depth_m: 1.0
+  depth_filter_mode: boundary
+  depth_boundary_sec: 60
+  descriptor_backend: dino
+  device: auto
+
+vlm:
+  images_dir: outputs/keyframes_video7/2025-05-13_11-25-23_DEEP_TREKKER_SD
+  output_dir: outputs/frame_reports/video7
+  overwrite: true
+  limit: 1
+  max_tokens: 256 
+
+synthesize:
+  frame_reports: outputs/frame_reports/video7/frame_reports.json
+  output_dir: outputs/final_reports/video7
+  title: ROV Seabed Inspection Summary - Video 7
+  copy_final_frames: true
+  overwrite: true

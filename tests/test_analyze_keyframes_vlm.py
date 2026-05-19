@@ -80,53 +80,8 @@ class AnalyzeKeyframesVlmTests(unittest.TestCase):
 
         self.assertEqual(args.model_name, "mlx-community/Qwen3-VL-4B-Instruct-4bit")
 
-    def test_prompt_version_argument_is_accepted(self) -> None:
-        argv = [
-            "analyze_keyframes_vlm.py",
-            "--images-dir",
-            "images",
-            "--output-dir",
-            "reports",
-            "--prompt-version",
-            "v3",
-        ]
-
-        with patch.object(sys, "argv", argv):
-            args = module.parse_args()
-
-        self.assertEqual(args.prompt_version, "v3")
-
-    def test_default_prompt_version_is_v3(self) -> None:
-        argv = [
-            "analyze_keyframes_vlm.py",
-            "--images-dir",
-            "images",
-            "--output-dir",
-            "reports",
-        ]
-
-        with patch.object(sys, "argv", argv):
-            args = module.parse_args()
-
-        self.assertEqual(args.prompt_version, "v3")
-
-    def test_prompt_version_choices_are_v3_only(self) -> None:
-        parser = module.build_parser()
-        prompt_action = next(action for action in parser._actions if "--prompt-version" in action.option_strings)
-
-        self.assertEqual(prompt_action.choices, ["v3"])
-
-    def test_v2_prompt_contains_new_instructions(self) -> None:
-        prompt = module.PROMPTS["v2"]
-
-        self.assertIn('substrate = "mixed"', prompt)
-        self.assertIn("low uncertainty", prompt)
-        self.assertIn("possible debris", prompt)
-        self.assertIn("Do not guess species", prompt)
-        self.assertIn("Do not invent species or objects", prompt)
-
-    def test_v3_prompt_contains_status_schema(self) -> None:
-        prompt = module.PROMPTS["v3"]
+    def test_vlm_prompt_contains_status_schema(self) -> None:
+        prompt = module.VLM_PROMPT
 
         self.assertIn('"algae_status": "none | possible | clear"', prompt)
         self.assertIn('"waste_status": "none | possible | clear"', prompt)

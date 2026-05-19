@@ -39,3 +39,7 @@ embeddings_cache/
 **/embeddings_cache/
 *.npy
 *.npz
+
+# Local secrets
+.env
+.env.local

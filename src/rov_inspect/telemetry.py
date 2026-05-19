@@ -74,24 +74,6 @@ def depth_at_timestamp(df: pd.DataFrame, timestamp_sec: float) -> float | None:
     return float(np.interp(timestamp_sec, times, depths))
 
 
-def is_underwater(
-    timestamp_sec: float,
-    df: pd.DataFrame,
-    min_depth_m: float,
-    stable_window_sec: float,
-) -> bool:
-    """Return True if depth is above threshold for the requested window."""
-
-    eligible, _, _ = depth_eligibility(
-        timestamp_sec=timestamp_sec,
-        df=df,
-        min_depth_m=min_depth_m,
-        stable_window_sec=stable_window_sec,
-        allow_missing_depth=False,
-    )
-    return eligible
-
-
 def depth_eligibility(
     timestamp_sec: float,
     df: pd.DataFrame,

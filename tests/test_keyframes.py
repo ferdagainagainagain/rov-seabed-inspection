@@ -29,7 +29,9 @@ class KeyframeSelectionTests(unittest.TestCase):
 
         self.assertEqual(result.sampled_count, 3)
         self.assertEqual([frame.reason for frame in result.selected], ["first_frame", "visual_change"])
-        self.assertEqual([frame.timestamp_sec for frame in result.selected], [0.0, 6.0])
+        self.assertEqual(
+            [frame.candidate.timestamp_sec for frame in result.selected], [0.0, 6.0]
+        )
 
     def test_selects_max_gap_fallback_for_long_boring_scene(self) -> None:
         candidates = [
@@ -46,7 +48,9 @@ class KeyframeSelectionTests(unittest.TestCase):
         )
 
         self.assertEqual([frame.reason for frame in result.selected], ["first_frame", "max_gap_fallback"])
-        self.assertEqual([frame.timestamp_sec for frame in result.selected], [0.0, 46.0])
+        self.assertEqual(
+            [frame.candidate.timestamp_sec for frame in result.selected], [0.0, 46.0]
+        )
 
     def test_skips_bad_initial_frame_when_good_frame_exists(self) -> None:
         bad_quality = FrameQuality(
@@ -67,7 +71,7 @@ class KeyframeSelectionTests(unittest.TestCase):
         result = select_keyframes(candidates)
 
         self.assertEqual([frame.reason for frame in result.selected], ["first_frame"])
-        self.assertEqual(result.selected[0].timestamp_sec, 1.0)
+        self.assertEqual(result.selected[0].candidate.timestamp_sec, 1.0)
 
 
 def _candidate(
@@ -87,7 +91,7 @@ def _candidate(
         timestamp_sec=timestamp,
         image=np.full((24, 32, 3), 120, dtype=np.uint8),
         quality=quality,
-        descriptor=descriptor,
+        classical_descriptor=descriptor,
     )
 
 

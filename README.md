@@ -6,6 +6,11 @@ The current clean pipeline is intentionally small and script based. The older ex
 
 ## Pipeline Overview
 
+The pipeline has three stages. They can be run individually or chained
+together by `scripts/run_pipeline.py`. Each stage takes its parameters from a
+per-video YAML config under `configs/` (CLI flags still work and override the
+YAML).
+
 ### Stage 1: Keyframe Selection
 
 Script: `scripts/select_keyframes.py`
@@ -47,10 +52,12 @@ The synthesis step:
 ## Repository Structure
 
 ```text
-scripts/select_keyframes.py        # video to selected keyframes
-scripts/analyze_keyframes_vlm.py   # selected keyframes to per-frame VLM reports
-scripts/synthesize_report.py       # frame reports to final Markdown report
-src/rov_inspect/                   # shared video, feature, telemetry, and contact sheet helpers
+scripts/run_pipeline.py            # run Stage 1 -> 2 -> 3 in one command
+scripts/select_keyframes.py        # Stage 1: video to selected keyframes
+scripts/analyze_keyframes_vlm.py   # Stage 2: keyframes to per-frame VLM reports
+scripts/synthesize_report.py       # Stage 3: frame reports to final Markdown report
+configs/                           # YAML config files, one per video
+src/rov_inspect/                   # shared modules (schema, telemetry, features, ...)
 demo/video7/                       # local demo run for Video 7
 outputs/                           # generated local outputs, ignored by Git
 old_repo/                          # archived previous implementation, ignored by Git
@@ -58,87 +65,71 @@ old_repo/                          # archived previous implementation, ignored b
 
 ## Environment
 
-The current local environment is:
+Activate the project virtualenv before running anything:
 
 ```bash
-old_repo/rovenv/bin/python
+source .venv/bin/activate
 ```
-
-This keeps the current working setup reproducible. A cleaner standalone environment file can be created later.
 
 The VLM stage uses `mlx-vlm`, so run it from a normal macOS terminal with Apple Metal access. Headless or sandboxed sessions may not be able to start the local model.
 
 ## Usage
 
-### 1. Select Keyframes
+Each stage reads its parameters from a per-video YAML config under `configs/`.
+CLI flags still work and override the values supplied in YAML.
 
-Example for Video 7:
-
-```bash
-old_repo/rovenv/bin/python scripts/select_keyframes.py \
-  --video 'data/messina/VIDEO 7/videos/2025-05-13_11-25-23_DEEP_TREKKER_SD.mp4' \
-  --output outputs/keyframes_video7 \
-  --descriptor-backend dino \
-  --sample-every-sec 1.0 \
-  --novelty-threshold 0.45 \
-  --min-gap-sec 3 \
-  --max-gap-sec 120 \
-  --depth-csv 'data/messina/VIDEO 7/data/depth_log.csv' \
-  --min-depth-m 1.0 \
-  --depth-filter-mode boundary \
-  --depth-boundary-sec 60 \
-  --device auto
-```
-
-Expected output:
-
-```text
-outputs/keyframes_video7/<video_stem>/
-  frame_0001_t00013.0.jpg
-  keyframes.csv
-  contact_sheet.jpg
-```
-
-### 2. Annotate Keyframes With Qwen3-VL
+Run the full pipeline (Stage 1 → 2 → 3) in one command:
 
 ```bash
-old_repo/rovenv/bin/python scripts/analyze_keyframes_vlm.py \
-  --images-dir outputs/keyframes_video7/2025-05-13_11-25-23_DEEP_TREKKER_SD \
-  --output-dir outputs/frame_reports/video7 \
-  --overwrite
+python scripts/run_pipeline.py --config configs/video1.yaml
 ```
 
-Expected output:
-
-```text
-outputs/frame_reports/video7/
-  frame_reports.jsonl
-  frame_reports.json
-  frame_reports.csv
-  frame_reports.md
-```
-
-### 3. Synthesize Final Report
+Or run the stages individually:
 
 ```bash
-old_repo/rovenv/bin/python scripts/synthesize_report.py \
-  --frame-reports outputs/frame_reports/video7/frame_reports.json \
-  --output-dir outputs/final_reports/video7 \
-  --title "ROV Seabed Inspection Summary - Video 7" \
-  --copy-final-frames \
-  --overwrite
+python scripts/select_keyframes.py     --config configs/video1.yaml
+python scripts/analyze_keyframes_vlm.py --config configs/video1.yaml
+python scripts/synthesize_report.py    --config configs/video1.yaml
 ```
 
-Expected output:
+The YAML has one section per stage (see `configs/video1.yaml` for a working
+example):
+
+```yaml
+keyframes:
+  video: data/VIDEO 1/videos/2025-05-13_09-49-42_DEEP_TREKKER_SD.mp4
+  output: outputs/keyframes_video1
+  descriptor_backend: dino
+  novelty_threshold: 0.25
+  depth_csv: data/VIDEO 1/data/depth_log.csv
+  depth_filter_mode: boundary
+
+vlm:
+  images_dir: outputs/keyframes_video1/2025-05-13_09-49-42_DEEP_TREKKER_SD
+  output_dir: outputs/frame_reports/video1
+  overwrite: true
+
+synthesize:
+  frame_reports: outputs/frame_reports/video1/frame_reports.json
+  output_dir: outputs/final_reports/video1
+  title: ROV Seabed Inspection Summary - Video 1
+  copy_final_frames: true
+  overwrite: true
+```
+
+Each stage produces:
 
 ```text
-outputs/final_reports/video7/
-  final_report.md
-  final_keyframes.csv
-  final_frame_reports.json
-  final_contact_sheet.jpg
-  final_frames/
+outputs/keyframes_video1/<video_stem>/   # Stage 1: frame_NNNN_*.jpg, keyframes.csv, contact_sheet.jpg
+outputs/frame_reports/video1/            # Stage 2: frame_reports.{jsonl,json,csv,md}
+outputs/final_reports/video1/            # Stage 3: final_report.md, final_keyframes.csv,
+                                         #          final_frame_reports.json, final_contact_sheet.jpg,
+                                         #          final_frames/  (when copy_final_frames: true)
 ```
+
+To run on a new video, copy `configs/video1.yaml` to `configs/videoN.yaml`
+and edit the paths inside. Pass any flag on the command line to override a
+YAML value, e.g. `--overwrite` or `--title "Other run"`.
 
 ## Output Schema
 

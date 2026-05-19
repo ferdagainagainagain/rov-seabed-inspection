@@ -1,4 +1,4 @@
-"""Optional DINO-style image embeddings for frame novelty."""
+"""DINO-style image embeddings used for the optional novelty backend."""
 
 from __future__ import annotations
 
@@ -8,6 +8,10 @@ import cv2
 import numpy as np
 
 DEFAULT_DINO_MODEL = "facebook/dinov3-vits16-pretrain-lvd1689m"
+_INSTALL_HINT = (
+    "DINO backend requires torch, transformers and Pillow. "
+    "Install them or run with --descriptor-backend classical."
+)
 
 
 @dataclass(frozen=True)
@@ -20,20 +24,21 @@ class DinoModel:
     model_name: str
 
 
+def _require_torch():
+    try:
+        import torch
+    except ImportError as exc:
+        raise RuntimeError(_INSTALL_HINT) from exc
+    return torch
+
+
 def choose_device(device: str) -> str:
     """Resolve auto/cpu/mps/cuda device selection."""
 
     if device not in {"auto", "cpu", "mps", "cuda"}:
         raise ValueError("--device must be one of: auto, cpu, mps, cuda")
 
-    try:
-        import torch
-    except ImportError as exc:
-        raise RuntimeError(
-            "DINO backend requires torch and transformers. "
-            "Install them or run with --descriptor-backend classical."
-        ) from exc
-
+    torch = _require_torch()
     if device == "auto":
         if torch.backends.mps.is_available():
             return "mps"
@@ -54,10 +59,7 @@ def load_dino_model(model_name: str = DEFAULT_DINO_MODEL, device: str = "auto") 
     try:
         from transformers import AutoImageProcessor, AutoModel
     except ImportError as exc:
-        raise RuntimeError(
-            "DINO backend requires transformers and torch. "
-            "Install them or run with --descriptor-backend classical."
-        ) from exc
+        raise RuntimeError(_INSTALL_HINT) from exc
 
     resolved_device = choose_device(device)
     try:
@@ -71,29 +73,20 @@ def load_dino_model(model_name: str = DEFAULT_DINO_MODEL, device: str = "auto") 
 
     model.to(resolved_device)
     model.eval()
-    return DinoModel(
-        model=model,
-        processor=processor,
-        device=resolved_device,
-        model_name=model_name,
-    )
+    return DinoModel(model=model, processor=processor, device=resolved_device, model_name=model_name)
 
 
 def compute_dino_embedding(frame: np.ndarray, dino_model: DinoModel) -> np.ndarray:
     """Embed one OpenCV BGR frame as a normalized 1D vector."""
 
+    torch = _require_torch()
     try:
-        import torch
         from PIL import Image
     except ImportError as exc:
-        raise RuntimeError(
-            "DINO backend requires torch and Pillow. "
-            "Install them or run with --descriptor-backend classical."
-        ) from exc
+        raise RuntimeError(_INSTALL_HINT) from exc
 
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    image = Image.fromarray(rgb)
-    inputs = dino_model.processor(images=image, return_tensors="pt")
+    inputs = dino_model.processor(images=Image.fromarray(rgb), return_tensors="pt")
     inputs = {name: value.to(dino_model.device) for name, value in inputs.items()}
 
     with torch.no_grad():
