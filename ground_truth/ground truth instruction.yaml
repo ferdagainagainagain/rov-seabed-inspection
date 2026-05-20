@@ -1,0 +1,59 @@
+# Ground truth — Video 1
+#
+# Annotare a mano cosa appare nel video e in che intervalli temporali, poi
+# eseguire `scripts/evaluate_against_ground_truth.py --config configs/video1.yaml`
+# per confrontare le annotazioni manuali con il JSON prodotto dal VLM.
+#
+# Convenzioni:
+# - I tempi sono in secondi dall'inizio del video (stessi timestamp usati dai keyframes).
+# - I range sono inclusivi: [start, end].
+# - `substrate` è single-label: i range NON si sovrappongono e idealmente
+#   coprono l'intero video.
+# - `events` sono multi-label: range diversi (anche con la stessa label)
+#   possono sovrapporsi, e non c'è obbligo di copertura completa.
+# - `subtype` è opzionale: serve solo a documentare il dettaglio.
+
+video: data/VIDEO 1/videos/2025-05-13_09-49-42_DEEP_TREKKER_SD.mp4
+duration_sec: null    # TODO: inserire la durata effettiva del video (es. 436.8)
+annotator: vivo0
+notes: |
+  Annotato manualmente guardando il video frame per frame.
+  Una label `clear` significa che l'elemento è chiaramente visibile;
+  per ambiguità (torbidità, occlusione parziale, lontananza) NON inserire il range.
+
+
+# ===========================================================================
+# substrate — fondale dominante in ogni istante. Single-label, mutuamente esclusivo.
+# Valori ammessi: sand | gravel | cobbles | rocks | mud | mixed | unclear
+# ===========================================================================
+substrate:
+  - { start: 0.0,   end: 0.0,   label: sand }     # TODO
+  # - { start: 0.0,   end: 60.0,  label: sand }
+  # - { start: 60.0,  end: 220.0, label: mixed }
+  # - { start: 220.0, end: 999.0, label: rocks }
+
+
+# ===========================================================================
+# events — cose che possono apparire e scomparire nel video. Multi-label.
+#
+# Valori ammessi per `label`:
+#   fauna              # animali in generale
+#   waste              # rifiuti / debris antropogenici nell'ambiente
+#   structure          # strutture fisse (relitti, condotte, ancoraggi, archeologia)
+#   rov_equipment      # tether, cavi, parti del ROV stesso
+#
+# `subtype` opzionale (esempi):
+#   fauna:         fish | crustacean | echinoderm | mollusk | cnidarian |
+#                  sponge | worm | bryozoan | ascidian | unidentified_animal
+#   waste:         plastic | fishing_net | rope | glass_bottle | metal_can |
+#                  tire | metal_debris | concrete_debris | generic_litter
+#   structure:     pipeline | shipwreck | anchor_block | archaeological_remains |
+#                  artificial_reef | concrete_structure | natural_arch
+#   rov_equipment: tether | cable | robot_arm | robot_frame | robot_light | robot_propeller
+# ===========================================================================
+events:
+  # TODO: aggiungere i range osservati. Esempi commentati qui sotto.
+  # - { label: fauna,         start: 25.0,  end: 30.0, subtype: fish }
+  # - { label: waste,         start: 78.0,  end: 85.0, subtype: plastic }
+  # - { label: structure,     start: 300.0, end: 320.0, subtype: shipwreck }
+  # - { label: rov_equipment, start: 0.0,   end: 999.0, subtype: tether }

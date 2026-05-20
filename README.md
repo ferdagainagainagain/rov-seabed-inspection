@@ -52,15 +52,17 @@ The synthesis step:
 ## Repository Structure
 
 ```text
-scripts/run_pipeline.py            # run Stage 1 -> 2 -> 3 in one command
-scripts/select_keyframes.py        # Stage 1: video to selected keyframes
-scripts/analyze_keyframes_vlm.py   # Stage 2: keyframes to per-frame VLM reports
-scripts/synthesize_report.py       # Stage 3: frame reports to final Markdown report
-configs/                           # YAML config files, one per video
-src/rov_inspect/                   # shared modules (schema, telemetry, features, ...)
-demo/video7/                       # local demo run for Video 7
-outputs/                           # generated local outputs, ignored by Git
-old_repo/                          # archived previous implementation, ignored by Git
+scripts/run_pipeline.py                    # run Stage 1 -> 2 -> 3 in one command
+scripts/select_keyframes.py                # Stage 1: video to selected keyframes
+scripts/analyze_keyframes_vlm.py           # Stage 2: keyframes to per-frame VLM reports
+scripts/synthesize_report.py               # Stage 3: frame reports to final Markdown report
+scripts/evaluate_against_ground_truth.py   # compare VLM annotations to hand-labelled GT
+configs/                                   # YAML config files, one per video
+ground_truth/                              # hand-labelled GT YAML files, one per video
+src/rov_inspect/                           # shared modules (schema, telemetry, features, ...)
+demo/video7/                               # local demo run for Video 7
+outputs/                                   # generated local outputs, ignored by Git
+old_repo/                                  # archived previous implementation, ignored by Git
 ```
 
 ## Environment

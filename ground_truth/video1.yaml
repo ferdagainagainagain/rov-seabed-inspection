@@ -1,0 +1,26 @@
+video: data/VIDEO 1/videos/2025-05-13_09-49-42_DEEP_TREKKER_SD.mp4
+duration_sec: 222
+annotator: vivo0
+
+# Valori ammessi: sand | gravel | cobbles | rocks | mud | mixed | unclear
+substrate:
+  - { start: 0.0,   end: 26,   label: unclear }
+  - { start: 26.0,  end: 37.0, label: rocks }
+  - { start: 37.0,  end: 43.0, label: unclear }
+  - { start: 43.0,  end: 76.0, label: rocks }
+  - { start: 76.0,  end: 99.0, label: mixed }
+  - { start: 99.0,  end: 139.0, label: sand }
+  - { start: 139.0, end: 208.0, label: mixed }
+  - { start: 208.0, end: 220.0, label: sand }
+  - { start: 220.0, end: 222.0, label: unclear }
+
+
+# Valori ammessi per `label`:
+#   fauna              # animali in generale
+#   waste              # rifiuti / debris antropogenici nell'ambiente
+#   structure          # strutture fisse (relitti, condotte, ancoraggi, archeologia)
+#   rov_equipment      # tether, cavi, parti del ROV stesso
+events:
+  - { label: fauna,         start: 45.0,  end: 55.0 }
+  - { label: fauna,         start: 60.0,  end: 83.0 }
+  - { label: rov_equipment, start: 215.0, end: 220.0 }

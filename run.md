@@ -64,6 +64,22 @@ outputs/final_reports/video1/
   final_frames/
 ```
 
+## 4. Valutazione contro il ground truth (opzionale)
+
+Richiede `ground_truth/video1.yaml` compilato a mano.
+
+```bash
+python scripts/evaluate_against_ground_truth.py --config configs/video1.yaml
+```
+
+Output atteso:
+
+```
+outputs/evaluation/video1/
+  evaluation_metrics.json
+  evaluation.md
+```
+
 ## Note
 
 - Tutti i parametri vivono in `configs/video1.yaml`. Per cambiare una soglia o un percorso, modifica il YAML.
