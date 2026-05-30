@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rov-inspect"
+version = "0.1.0"
+description = "ROV seabed video inspection pipeline: keyframe selection, local VLM annotation, and Markdown report synthesis."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "ROV Inspect contributors" }]
+keywords = ["rov", "seabed", "inspection", "computer-vision", "vlm", "mlx", "dinov3"]
+
+# Pinned to the versions verified in the working environment.
+# The VLM stage is Apple-Silicon only (it depends on mlx / mlx-vlm).
+dependencies = [
+    "mlx-vlm==0.5.0",
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "transformers==5.8.0",
+    "huggingface_hub==1.14.0",
+    "opencv-python==4.13.0.92",
+    "numpy==2.4.4",
+    "pandas==3.0.2",
+    "pillow==12.2.0",
+    "PyYAML==6.0.3",
+    "scipy==1.17.1",
+    "tqdm==4.67.3",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]

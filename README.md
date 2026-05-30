@@ -1,108 +1,165 @@
-# ROV Inspect
+# ROV Seabed Inspection
 
-ROV seabed video inspection pipeline that selects representative frames, annotates them with a local VLM, and produces a Markdown inspection report.
+<p align="center">
+  <img src="picsreadme/Business.png" alt="ROV Seabed Inspection" width="520">
+</p>
 
-The current clean pipeline is intentionally small and script based. The older experimental code under `old_repo/` is archived reference material and is not part of the current workflow.
+<p align="center">
+  <em>Turn raw ROV seabed footage into a short, reviewable inspection report.</em>
+</p>
 
-## Pipeline Overview
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.13-blue.svg" alt="Python 3.13">
+  <img src="https://img.shields.io/badge/platform-macOS%20(Apple%20Silicon)-lightgrey.svg" alt="Platform: macOS Apple Silicon">
+  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT">
+</p>
 
-The pipeline has three stages. They can be run individually or chained
-together by `scripts/run_pipeline.py`. Each stage takes its parameters from a
-per-video YAML config under `configs/` (CLI flags still work and override the
-YAML).
+<p align="center">
+  <sub>Project for the <strong>Computer Vision and Pattern Recognition</strong> MSc course at <strong>USI Lugano</strong>.</sub>
+</p>
 
-### Stage 1: Keyframe Selection
+## What is this?
 
-Script: `scripts/select_keyframes.py`
+**ROV Seabed Inspection** is a small, script-based pipeline for reviewing underwater
+ROV (Remotely Operated Vehicle) video. Instead of watching the full recording, it:
 
-Input: an ROV video, optionally with a depth CSV.
+1. **Selects** a handful of visually representative frames (keyframes) from the video.
+2. **Annotates** each keyframe with a local Vision-Language Model (VLM) running on your machine.
+3. **Synthesizes** the per-frame annotations into a single Markdown inspection report.
 
-The selector:
-- samples frames from the video
-- applies optional depth filtering and basic quality filtering
-- selects visually novel frames
-- supports classical descriptors, DINOv3 embeddings, and hybrid novelty scoring
-- writes selected JPEGs, `keyframes.csv`, and `contact_sheet.jpg`
+Everything runs **locally on Apple Silicon** — no cloud calls, no API keys. The goal is to
+be honest and conservative: ambiguous findings are flagged as *possible* rather than hidden,
+so a human reviewer stays in the loop.
 
-### Stage 2: Per-Frame VLM Annotation
+## How it works
 
-Script: `scripts/analyze_keyframes_vlm.py`
+The pipeline has three stages. They can be run one by one, or chained together by
+`scripts/run_pipeline.py`. Each stage reads its parameters from a per-video YAML file
+under `configs/` (command-line flags still work and override the YAML).
 
-Input: a folder of selected keyframes.
+| Stage | Script | In → Out |
+|------|--------|----------|
+| **1. Keyframe selection** | `select_keyframes.py` | video (+ optional depth CSV) → selected JPEGs, `keyframes.csv`, `contact_sheet.jpg` |
+| **2. VLM annotation** | `analyze_keyframes_vlm.py` | keyframe folder → `frame_reports.{jsonl,json,csv,md}` |
+| **3. Report synthesis** | `synthesize_report.py` | `frame_reports.json` → `final_report.md` (+ representative frames, contact sheet) |
 
-The annotation step:
-- analyzes each keyframe independently
-- uses local `mlx-vlm`
-- defaults to `mlx-community/Qwen3-VL-4B-Instruct-4bit`
-- uses the status-based schema described below
-- writes `frame_reports.jsonl`, `frame_reports.json`, `frame_reports.csv`, and `frame_reports.md`
+Stage 1 samples frames, applies optional depth and quality filtering, then keeps frames
+that are *visually novel* using classical descriptors, **DINOv3** embeddings, or a hybrid of
+both. The result is a contact sheet of everything the pipeline decided was worth looking at:
 
-### Stage 3: Final Report Synthesis
+<p align="center">
+  <img src="demo/video7/final_report/final_contact_sheet.jpg" alt="Contact sheet of selected keyframes" width="720">
+</p>
 
-Script: `scripts/synthesize_report.py`
+Stage 2 sends each keyframe to a local VLM and records a structured annotation (substrate,
+algae, waste, fauna, structures, and visible ROV equipment). Stage 3 groups similar adjacent
+frames, keeps conservative representatives, and writes the final report.
 
-Input: `frame_reports.json`.
+## Installation
 
-The synthesis step:
-- sorts and groups adjacent semantically similar frame reports
-- keeps conservative representatives so possible findings are not discarded
-- separates environmental findings from visible ROV equipment or tether
-- writes `final_report.md`, `final_keyframes.csv`, `final_frame_reports.json`, copied `final_frames/` when requested, and `final_contact_sheet.jpg` when possible
-
-## Repository Structure
-
-```text
-scripts/run_pipeline.py                    # run Stage 1 -> 2 -> 3 in one command
-scripts/select_keyframes.py                # Stage 1: video to selected keyframes
-scripts/analyze_keyframes_vlm.py           # Stage 2: keyframes to per-frame VLM reports
-scripts/synthesize_report.py               # Stage 3: frame reports to final Markdown report
-scripts/evaluate_against_ground_truth.py   # compare VLM annotations to hand-labelled GT
-configs/                                   # YAML config files, one per video
-ground_truth/                              # hand-labelled GT YAML files, one per video
-src/rov_inspect/                           # shared modules (schema, telemetry, features, ...)
-demo/video7/                               # local demo run for Video 7
-outputs/                                   # generated local outputs, ignored by Git
-old_repo/                                  # archived previous implementation, ignored by Git
-```
-
-## Environment
-
-Activate the project virtualenv before running anything:
+> **Requirements:** macOS on **Apple Silicon** (M-series) with Metal. The VLM stage uses
+> `mlx-vlm`, so run it from a normal macOS terminal — headless or sandboxed sessions may not
+> be able to start the local model. Tested with **Python 3.13**.
 
 ```bash
+# 1. Clone
+git clone https://github.com/ferdagainagainagain/rov-seabed-inspection.git
+cd rov-seabed-inspection
+
+# 2. Create and activate a virtual environment
+python3 -m venv .venv
 source .venv/bin/activate
+
+# 3. Install the project and its dependencies (pinned in pyproject.toml)
+pip install --upgrade pip
+pip install -e .
 ```
 
-The VLM stage uses `mlx-vlm`, so run it from a normal macOS terminal with Apple Metal access. Headless or sandboxed sessions may not be able to start the local model.
+`pip install -e .` installs the pinned dependencies (`mlx-vlm`, `torch`, `transformers`,
+`opencv-python`, …) and makes the `rov_inspect` package importable. Activate the environment
+(`source .venv/bin/activate`) in every new terminal before running the pipeline.
+
+## Models
+
+The pipeline uses two kinds of model. Both are downloaded from the
+[Hugging Face Hub](https://huggingface.co) and cached locally (by default under
+`~/.cache/huggingface`). They download automatically the first time you run a stage, but you
+can also fetch them ahead of time with the steps below.
+
+### 1. DINOv3 — keyframe novelty (Stage 1)
+
+Used to measure how *visually different* each frame is, so the selector keeps novel views and
+skips near-duplicates.
+
+- **Model:** `facebook/dinov3-vits16-pretrain-lvd1689m`
+- **Size:** small (ViT-S/16, ≈ 90 MB)
+- **Access:** this is a **gated** model — you must accept Meta's license once, while logged in.
+
+Steps:
+
+```bash
+# a. Log in to Hugging Face (create a free token at https://huggingface.co/settings/tokens)
+hf auth login        # older alias: huggingface-cli login
+
+# b. Open the model page in a browser and click "Agree and access repository":
+#    https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m
+
+# c. (Optional) pre-download into the local cache
+hf download facebook/dinov3-vits16-pretrain-lvd1689m
+```
+
+If you skip DINOv3 you can still run Stage 1 with the classical descriptor backend
+(`descriptor_backend: classical` in the YAML), which needs no model download.
+
+### 2. Vision-Language Model — frame annotation (Stage 2)
+
+Used to describe each keyframe and fill in the structured annotation fields. These are public
+MLX-format models (no login or license acceptance needed) and run on Apple Metal via `mlx-vlm`.
+
+| Role | Model | Approx. size |
+|------|-------|--------------|
+| **Default** | `mlx-community/Qwen3-VL-4B-Instruct-4bit` | ≈ 2.5 GB |
+| Alternative | `mlx-community/gemma-4-e4b-it-4bit` | ≈ 2.8 GB |
+
+```bash
+# Pre-download the default model (otherwise it downloads on first run of Stage 2)
+hf download mlx-community/Qwen3-VL-4B-Instruct-4bit
+```
+
+To use the alternative model, pass it on the command line or set it in the YAML:
+
+```bash
+python scripts/analyze_keyframes_vlm.py --config configs/video1.yaml \
+  --model-name mlx-community/gemma-4-e4b-it-4bit
+```
 
 ## Usage
 
-Each stage reads its parameters from a per-video YAML config under `configs/`.
-CLI flags still work and override the values supplied in YAML.
+Each stage reads its parameters from a per-video YAML config under `configs/`. CLI flags
+override the YAML values when given.
 
-Run the full pipeline (Stage 1 → 2 → 3) in one command:
+**Run the full pipeline (Stage 1 → 2 → 3) in one command:**
 
 ```bash
 python scripts/run_pipeline.py --config configs/video1.yaml
 ```
 
-Or run the stages individually:
+**Or run the stages individually:**
 
 ```bash
-python scripts/select_keyframes.py     --config configs/video1.yaml
+python scripts/select_keyframes.py      --config configs/video1.yaml
 python scripts/analyze_keyframes_vlm.py --config configs/video1.yaml
-python scripts/synthesize_report.py    --config configs/video1.yaml
+python scripts/synthesize_report.py     --config configs/video1.yaml
 ```
 
-The YAML has one section per stage (see `configs/video1.yaml` for a working
-example):
+A config has one section per stage (see [`configs/video1.yaml`](configs/video1.yaml)):
 
 ```yaml
 keyframes:
   video: data/VIDEO 1/videos/2025-05-13_09-49-42_DEEP_TREKKER_SD.mp4
   output: outputs/keyframes_video1
   descriptor_backend: dino
-  novelty_threshold: 0.25
+  novelty_threshold: 0.3
   depth_csv: data/VIDEO 1/data/depth_log.csv
   depth_filter_mode: boundary
 
@@ -129,63 +186,74 @@ outputs/final_reports/video1/            # Stage 3: final_report.md, final_keyfr
                                          #          final_frames/  (when copy_final_frames: true)
 ```
 
-To run on a new video, copy `configs/video1.yaml` to `configs/videoN.yaml`
-and edit the paths inside. Pass any flag on the command line to override a
-YAML value, e.g. `--overwrite` or `--title "Other run"`.
+To run on a new video, copy `configs/video1.yaml` to `configs/videoN.yaml` and edit the paths
+inside.
 
-## Output Schema
+## Example output (Demo: Video 7)
 
-The preferred interpretation fields are status fields:
+A complete demo run is included under [`demo/video7/`](demo/video7/), so you can see real
+output without running anything. Open the generated report here:
 
-- `algae_status`
-- `waste_status`
-- `fauna_status`
-- `structure_status`
+➡️ **[`demo/video7/final_report/final_report.md`](demo/video7/final_report/final_report.md)**
 
-Allowed values:
+Two of the representative frames the pipeline kept:
 
-- `clear`: clearly visible
-- `possible`: ambiguous but worth flagging
-- `none`: no visual evidence
+<p align="center">
+  <img src="demo/video7/final_report/final_frames/final_0004_t00160.0.jpg" alt="Clear debris on the seabed" width="360">
+  <img src="demo/video7/final_report/final_frames/final_0006_t00179.0.jpg" alt="Coiled ROV tether on the seabed" width="360">
+</p>
 
-`possible` is important for underwater ROV footage because visibility, lighting, turbidity, and partial occlusion can make biological and anthropogenic content uncertain.
+<p align="center">
+  <sub>Left: <em>"An anthropogenic object covered in sediment"</em> — waste flagged <code>clear</code>.
+  Right: a coiled <em>ROV tether</em> — recorded as ROV equipment, not as environmental debris.</sub>
+</p>
 
-The pipeline also distinguishes visible ROV equipment from environmental findings:
+The demo includes the source-video metadata, copied keyframes, per-frame reports, and the
+final synthesized report. The original video (~215 MB) is large and is not tracked by Git.
+
+## Output schema
+
+For each frame the VLM fills in **status** fields, the preferred way to read findings:
+
+- `algae_status`, `waste_status`, `fauna_status`, `structure_status`
+
+with allowed values:
+
+- `clear` — clearly visible
+- `possible` — ambiguous but worth flagging
+- `none` — no visual evidence
+
+`possible` matters for underwater footage, where visibility, lighting, turbidity, and partial
+occlusion make biological and man-made content genuinely uncertain.
+
+The pipeline also separates **visible ROV equipment** from environmental findings, so a tether
+or cable is not mistaken for debris or a fixed structure:
 
 - `rov_equipment_status`: `none`, `possible`, or `clear`
 - `rov_equipment_type`: `none`, `tether`, `cable`, `robot_part`, or `other`
 
-ROV equipment or tether should not be interpreted as environmental debris or as a fixed man-made structure.
+For backwards compatibility, boolean fields (`algae_present`, `waste_present`, …) are also
+written, derived as `true` when the matching status is `possible` or `clear`.
 
-For backwards compatibility, the annotation step still writes boolean fields:
+## Evaluation (optional)
 
-- `algae_present`
-- `waste_present`
-- `fauna_present`
-- `structure_present`
-- `rov_equipment_present`
+If you hand-label a video's ground truth (see `ground_truth/`), you can compare the VLM
+annotations against it:
 
-These are derived from status values: `true` when status is `possible` or `clear`, otherwise `false`.
-
-## Demo: Video 7
-
-A copied demo run is available at:
-
-```text
-demo/video7/
+```bash
+python scripts/evaluate_against_ground_truth.py --config configs/video1.yaml
+# → outputs/evaluation/video1/evaluation_metrics.json, evaluation.md
 ```
-
-Open the final report here:
-
-```text
-demo/video7/final_report/final_report.md
-```
-
-The demo includes copied keyframes, per-frame reports, and the final synthesized report. The original source video is large and is ignored by Git.
 
 ## Limitations
 
-- Local VLM outputs should be interpreted cautiously.
-- A `possible` finding is not a certain fact.
-- Underwater visibility, turbidity, lighting, and partial occlusion can affect model predictions.
-- The current pipeline is intentionally conservative and high-recall, so it may keep extra frames or flag ambiguous findings for human review.
+- Local VLM outputs should be interpreted cautiously — a `possible` finding is **not** a certain fact.
+- Underwater visibility, turbidity, lighting, and partial occlusion all affect predictions.
+- The pipeline is intentionally **conservative and high-recall**: it may keep extra frames or
+  flag ambiguous findings, leaving the final judgement to a human reviewer.
+
+## Acknowledgments
+
+- Built for the **Computer Vision and Pattern Recognition** MSc course at **USI Lugano**.
+- Uses [DINOv3](https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m) and local
+  VLMs served through [`mlx-vlm`](https://github.com/Blaizzy/mlx-vlm).

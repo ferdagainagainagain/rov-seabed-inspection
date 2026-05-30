@@ -40,6 +40,10 @@ embeddings_cache/
 *.npy
 *.npz
 
+# README assets: ignore the folder except the hero image used by README.md
+picsreadme/*
+!picsreadme/Business.png
+
 # Local secrets
 .env
 .env.local
