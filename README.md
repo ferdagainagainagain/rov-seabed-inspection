@@ -1,7 +1,7 @@
 # ROV Seabed Inspection
 
 <p align="center">
-  <img src="picsreadme/Business.png" alt="ROV Seabed Inspection" width="520">
+  <img src="https://raw.githubusercontent.com/ferdagainagainagain/rov-seabed-inspection/assets/Business.png" alt="ROV Seabed Inspection" width="520">
 </p>
 
 <p align="center">
