@@ -28,6 +28,9 @@ demo/video7/input/*.mov
 demo/video7/input/*.avi
 demo/video7/input/*.mkv
 
+# Design files 
+picsreadme/
+
 # Python environments
 .venv/
 venv/

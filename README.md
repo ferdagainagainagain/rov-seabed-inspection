@@ -27,9 +27,7 @@ ROV (Remotely Operated Vehicle) video. Instead of watching the full recording, i
 2. **Annotates** each keyframe with a local Vision-Language Model (VLM) running on your machine.
 3. **Synthesizes** the per-frame annotations into a single Markdown inspection report.
 
-Everything runs **locally on Apple Silicon** — no cloud calls, no API keys. The goal is to
-be honest and conservative: ambiguous findings are flagged as *possible* rather than hidden,
-so a human reviewer stays in the loop.
+Everything runs **locally on Apple Silicon**,no API keys. The goal is to be conservative: ambiguous findings are flagged as *possible* rather than hidden.
 
 ## How it works
 
@@ -58,7 +56,7 @@ frames, keeps conservative representatives, and writes the final report.
 ## Installation
 
 > **Requirements:** macOS on **Apple Silicon** (M-series) with Metal. The VLM stage uses
-> `mlx-vlm`, so run it from a normal macOS terminal — headless or sandboxed sessions may not
+> `mlx-vlm`, so run it from a normal macOS terminal. headless or sandboxed sessions may not
 > be able to start the local model. Tested with **Python 3.13**.
 
 ```bash
@@ -86,14 +84,14 @@ The pipeline uses two kinds of model. Both are downloaded from the
 `~/.cache/huggingface`). They download automatically the first time you run a stage, but you
 can also fetch them ahead of time with the steps below.
 
-### 1. DINOv3 — keyframe novelty (Stage 1)
+### 1. DINOv3: keyframe novelty (Stage 1)
 
 Used to measure how *visually different* each frame is, so the selector keeps novel views and
 skips near-duplicates.
 
 - **Model:** `facebook/dinov3-vits16-pretrain-lvd1689m`
 - **Size:** small (ViT-S/16, ≈ 90 MB)
-- **Access:** this is a **gated** model — you must accept Meta's license once, while logged in.
+- **Access:** this is a **gated** model, you must accept Meta's license once, while logged in.
 
 Steps:
 
@@ -111,7 +109,7 @@ hf download facebook/dinov3-vits16-pretrain-lvd1689m
 If you skip DINOv3 you can still run Stage 1 with the classical descriptor backend
 (`descriptor_backend: classical` in the YAML), which needs no model download.
 
-### 2. Vision-Language Model — frame annotation (Stage 2)
+### 2. Vision-Language Model: frame annotation (Stage 2)
 
 Used to describe each keyframe and fill in the structured annotation fields. These are public
 MLX-format models (no login or license acceptance needed) and run on Apple Metal via `mlx-vlm`.
@@ -132,6 +130,31 @@ To use the alternative model, pass it on the command line or set it in the YAML:
 python scripts/analyze_keyframes_vlm.py --config configs/video1.yaml \
   --model-name mlx-community/gemma-4-e4b-it-4bit
 ```
+
+## Data
+
+The ROV videos used by this project are **provided privately by an engineering company** and
+are **not** included in this repository (the `data/` folder is git-ignored). To reproduce a
+run you need to obtain a video and place it on disk yourself.
+
+**Requesting a video:** the footage cannot be shared publicly. To ask for a copy, contact
+**Ferdinando Giordano** at **[ferdinando.giordano@usi.ch](mailto:ferdinando.giordano@usi.ch)**.
+
+**Where to put it:** each config points at a per-video folder under `data/`. Place the video
+(and its optional depth log) like this:
+
+```text
+data/
+  VIDEO 1/
+    videos/
+      2025-05-13_09-49-42_DEEP_TREKKER_SD.mp4   # the ROV video
+    data/
+      depth_log.csv                             # optional depth telemetry
+```
+
+The paths in `configs/video1.yaml` (`keyframes.video` and `keyframes.depth_csv`) must match
+where you saved the files. The depth CSV is optional, if you don't have one, remove or leave
+out the `depth_csv` line and the depth-filtering step is skipped.
 
 ## Usage
 
@@ -204,8 +227,8 @@ Two of the representative frames the pipeline kept:
 </p>
 
 <p align="center">
-  <sub>Left: <em>"An anthropogenic object covered in sediment"</em> — waste flagged <code>clear</code>.
-  Right: a coiled <em>ROV tether</em> — recorded as ROV equipment, not as environmental debris.</sub>
+  <sub>Left: <em>"An anthropogenic object covered in sediment"</em>, waste flagged <code>clear</code>.
+  Right: a coiled <em>ROV tether</em>, recorded as ROV equipment, not as environmental debris.</sub>
 </p>
 
 The demo includes the source-video metadata, copied keyframes, per-frame reports, and the
@@ -219,9 +242,9 @@ For each frame the VLM fills in **status** fields, the preferred way to read fin
 
 with allowed values:
 
-- `clear` — clearly visible
-- `possible` — ambiguous but worth flagging
-- `none` — no visual evidence
+- `clear`: clearly visible
+- `possible`: ambiguous but worth flagging
+- `none`: no visual evidence
 
 `possible` matters for underwater footage, where visibility, lighting, turbidity, and partial
 occlusion make biological and man-made content genuinely uncertain.
@@ -247,7 +270,7 @@ python scripts/evaluate_against_ground_truth.py --config configs/video1.yaml
 
 ## Limitations
 
-- Local VLM outputs should be interpreted cautiously — a `possible` finding is **not** a certain fact.
+- Local VLM outputs should be interpreted cautiously: a `possible` finding is **not** a certain fact.
 - Underwater visibility, turbidity, lighting, and partial occlusion all affect predictions.
 - The pipeline is intentionally **conservative and high-recall**: it may keep extra frames or
   flag ambiguous findings, leaving the final judgement to a human reviewer.
