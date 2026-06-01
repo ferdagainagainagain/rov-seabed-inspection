@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ROV Seabed Inspection — Local CV pipeline for underwater video</title>
+  <meta name="description" content="A local, script-based computer-vision pipeline that turns raw ROV seabed footage into a short, reviewable inspection report. Runs fully on Apple Silicon — no cloud, no API keys." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- animated ocean backdrop -->
+  <div class="ocean-bg" aria-hidden="true">
+    <div class="caustic caustic--1"></div>
+    <div class="caustic caustic--2"></div>
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <!-- nav -->
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="#top">
+      <span class="nav__logo" aria-hidden="true">◐</span>
+      <span>ROV&nbsp;Seabed&nbsp;Inspection</span>
+    </a>
+    <nav class="nav__links">
+      <a href="#how">How it works</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#demo">Demo</a>
+      <a href="#schema">Output</a>
+      <a href="#start">Get started</a>
+    </nav>
+    <a class="btn btn--ghost nav__cta" href="https://github.com/ferdagainagainagain/rov-seabed-inspection" target="_blank" rel="noopener">GitHub ↗</a>
+  </header>
+
+  <main id="top">
+    <!-- hero -->
+    <section class="hero">
+      <div class="hero__inner reveal">
+        <span class="badge">Computer Vision · MSc · USI Lugano</span>
+        <h1 class="hero__title">
+          From hours of murky footage to a <span class="grad">report you can read</span>.
+        </h1>
+        <p class="hero__sub">
+          A local, script-based pipeline that selects the frames worth looking at, annotates
+          them with an on-device VLM, and synthesizes one inspection report — <strong>no cloud,
+          no API keys.</strong> Here is the whole thing in three steps:
+        </p>
+        <ul class="hero__chips">
+          <li>🍎 Apple Silicon</li>
+          <li>🔒 Fully offline</li>
+          <li>🧭 Human in the loop</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- how it works · the 3-step animation (front and centre) -->
+    <section class="section section--tight" id="how">
+      <div class="player glass reveal" id="pipeline">
+        <div class="player__stage">
+
+          <!-- Stage 1 · Select -->
+          <div class="scene scene--select active" data-step="0">
+            <div class="scene__head">
+              <span class="scene__n">01</span>
+              <div>
+                <h3>Keyframe selection</h3>
+                <p>Play through the dive and capture only the frames worth looking at.</p>
+              </div>
+              <code class="scene__cmd">select_keyframes.py</code>
+            </div>
+            <div class="vidscan">
+              <figure class="vidscan__player">
+                <img class="vframe base" src="assets/frames/final_0006_t00179.0.jpg" alt="ROV dive footage" loading="lazy" />
+                <img class="vframe" style="--i:0" src="assets/frames/final_0001_t00013.0.jpg" alt="" loading="lazy" />
+                <img class="vframe" style="--i:1" src="assets/frames/final_0003_t00153.0.jpg" alt="" loading="lazy" />
+                <img class="vframe" style="--i:2" src="assets/frames/final_0010_t00345.0.jpg" alt="" loading="lazy" />
+                <img class="vframe" style="--i:3" src="assets/frames/final_0004_t00160.0.jpg" alt="" loading="lazy" />
+                <span class="rec"><i></i> REC</span>
+                <span class="shutter"></span>
+                <div class="timeline">
+                  <span class="marker" style="left:17%; --d:.7s"></span>
+                  <span class="marker" style="left:41%; --d:1.8s"></span>
+                  <span class="marker" style="left:65%; --d:2.9s"></span>
+                  <span class="marker" style="left:89%; --d:4.0s"></span>
+                  <span class="playhead"></span>
+                </div>
+              </figure>
+              <div class="captured">
+                <span class="captured__label">Captured keyframes</span>
+                <div class="captured__row">
+                  <img class="cap" style="--d:.7s"  src="assets/frames/final_0001_t00013.0.jpg" alt="" loading="lazy" />
+                  <img class="cap" style="--d:1.8s" src="assets/frames/final_0003_t00153.0.jpg" alt="" loading="lazy" />
+                  <img class="cap" style="--d:2.9s" src="assets/frames/final_0004_t00160.0.jpg" alt="" loading="lazy" />
+                  <img class="cap" style="--d:4.0s" src="assets/frames/final_0006_t00179.0.jpg" alt="" loading="lazy" />
+                </div>
+              </div>
+            </div>
+            <div class="scene__foot"><span class="chip-mini">DINOv3 novelty</span> only visually new views are kept — near-duplicates are skipped</div>
+          </div>
+
+          <!-- Stage 2 · Annotate -->
+          <div class="scene scene--annotate" data-step="1">
+            <div class="scene__head">
+              <span class="scene__n">02</span>
+              <div>
+                <h3>VLM annotation</h3>
+                <p>A local model reads each keyframe into structured, conservative fields.</p>
+              </div>
+              <code class="scene__cmd">analyze_keyframes_vlm.py</code>
+            </div>
+            <div class="vlm">
+              <figure class="vlm__img">
+                <img src="assets/frames/final_0006_t00179.0.jpg" alt="Keyframe being analysed by the VLM" loading="lazy" />
+                <span class="scanline"></span>
+              </figure>
+              <div class="vlm__tags">
+                <span class="anno" style="--i:0">substrate · <b>mixed</b></span>
+                <span class="anno ok" style="--i:1">rocks ✓</span>
+                <span class="anno ok" style="--i:2">cobbles ✓</span>
+                <span class="anno warn" style="--i:3">algae · possible</span>
+                <span class="anno clear" style="--i:4">waste · clear</span>
+                <span class="anno warn" style="--i:5">fauna · possible</span>
+                <span class="anno rov" style="--i:6">ROV tether · clear</span>
+                <span class="anno" style="--i:7">visibility · medium</span>
+              </div>
+            </div>
+            <div class="scene__foot"><span class="chip-mini">Qwen3-VL 4B · on-device</span> structured per-frame report</div>
+          </div>
+
+          <!-- Stage 3 · Synthesize -->
+          <div class="scene scene--synth" data-step="2">
+            <div class="scene__head">
+              <span class="scene__n">03</span>
+              <div>
+                <h3>Report synthesis</h3>
+                <p>Group similar frames, keep conservative representatives, write one report.</p>
+              </div>
+              <code class="scene__cmd">synthesize_report.py</code>
+            </div>
+            <div class="synth">
+              <div class="synth__stack" aria-hidden="true">
+                <span class="mini" style="--i:0"></span>
+                <span class="mini" style="--i:1"></span>
+                <span class="mini" style="--i:2"></span>
+              </div>
+              <div class="synth__arrow" aria-hidden="true">→</div>
+              <div class="doc">
+                <div class="doc__line doc__h" style="--i:0"># ROV Seabed Inspection — Video 7</div>
+                <div class="doc__line" style="--i:1">14 analyzed frames → 14 representative frames</div>
+                <div class="doc__line" style="--i:2">Dominant substrate: mixed (12), sand (2)</div>
+                <div class="doc__line clear" style="--i:3">⚠ Clear debris flagged in 2 frames</div>
+                <div class="doc__line rov" style="--i:4">ROV tether clearly visible in 1 frame</div>
+                <div class="doc__line struct" style="--i:5">1 clear man-made structure</div>
+              </div>
+            </div>
+            <div class="scene__foot">→ <b>final_report.md</b>, ready for human review</div>
+          </div>
+
+        </div>
+
+        <div class="player__steps">
+          <button class="step current" data-step="0" type="button">
+            <b>① Select</b><span>watch &amp; capture frames</span><i class="step__bar"></i>
+          </button>
+          <button class="step" data-step="1" type="button">
+            <b>② Annotate</b><span>VLM structured fields</span><i class="step__bar"></i>
+          </button>
+          <button class="step" data-step="2" type="button">
+            <b>③ Synthesize</b><span>one Markdown report</span><i class="step__bar"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="terminal glass reveal">
+        <div class="terminal__bar">
+          <span></span><span></span><span></span>
+          <em>bash</em>
+        </div>
+        <pre class="terminal__body"><code><span class="c-com"># Run the full pipeline (Stage 1 → 2 → 3) in one command</span>
+<span class="c-pmt">$</span> python scripts/run_pipeline.py <span class="c-flg">--config</span> configs/video1.yaml
+
+<span class="c-com"># …or run the stages individually</span>
+<span class="c-pmt">$</span> python scripts/select_keyframes.py      <span class="c-flg">--config</span> configs/video1.yaml
+<span class="c-pmt">$</span> python scripts/analyze_keyframes_vlm.py <span class="c-flg">--config</span> configs/video1.yaml
+<span class="c-pmt">$</span> python scripts/synthesize_report.py     <span class="c-flg">--config</span> configs/video1.yaml</code></pre>
+      </div>
+    </section>
+
+    <!-- live demo · real output -->
+    <section class="section section--band band-deep" id="demo">
+      <div class="section__head section__head--center reveal">
+        <span class="eyebrow">Live demo · Video 7</span>
+        <h2>Real output, no run required.</h2>
+        <p class="lead">From a ~7&nbsp;minute dive, the pipeline kept <strong>14 representative keyframes</strong> and flagged what's worth a second look. Hover a frame.</p>
+      </div>
+
+      <div class="gallery">
+        <figure class="shot reveal">
+          <img src="assets/frames/final_0004_t00160.0.jpg" alt="An anthropogenic object covered in sediment on the seabed" loading="lazy" />
+          <figcaption>
+            <span class="tag tag--clear">waste · clear</span>
+            “An anthropogenic object covered in sediment.”
+          </figcaption>
+        </figure>
+        <figure class="shot reveal">
+          <img src="assets/frames/final_0006_t00179.0.jpg" alt="A coiled ROV tether on the seabed" loading="lazy" />
+          <figcaption>
+            <span class="tag tag--rov">ROV tether</span>
+            A coiled tether — logged as equipment, <em>not</em> debris.
+          </figcaption>
+        </figure>
+        <figure class="shot reveal">
+          <img src="assets/frames/final_0013_t00392.0.jpg" alt="Two rusted cylindrical structures on the seabed" loading="lazy" />
+          <figcaption>
+            <span class="tag tag--struct">structure · clear</span>
+            Two large rusted cylindrical structures, importance <em>high</em>.
+          </figcaption>
+        </figure>
+        <figure class="shot reveal">
+          <img src="assets/frames/final_0010_t00345.0.jpg" alt="A rocky seabed with a large boulder in poor visibility" loading="lazy" />
+          <figcaption>
+            <span class="tag tag--possible">fauna · possible</span>
+            Large boulder, scattered rocks, poor visibility.
+          </figcaption>
+        </figure>
+        <figure class="shot reveal">
+          <img src="assets/frames/final_0001_t00013.0.jpg" alt="Underwater seabed with scattered rocks and cobbles" loading="lazy" />
+          <figcaption>
+            <span class="tag">substrate · mixed</span>
+            Scattered rocks and cobbles in murky water.
+          </figcaption>
+        </figure>
+        <figure class="shot reveal">
+          <img src="assets/frames/final_0003_t00153.0.jpg" alt="Sandy seabed with a faint dark object" loading="lazy" />
+          <figcaption>
+            <span class="tag tag--possible">fauna · possible</span>
+            Sandy substrate with a faint object in mid-water.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- output schema -->
+    <section class="section" id="schema">
+      <div class="section__head reveal">
+        <span class="eyebrow">Output schema</span>
+        <h2>Honest by design.</h2>
+        <p class="lead">Underwater visibility makes findings genuinely uncertain. Every status field can say <strong>“possible”</strong> — ambiguity is flagged, not hidden.</p>
+      </div>
+
+      <div class="schema">
+        <div class="status-grid reveal">
+          <div class="status status--clear"><b>clear</b><span>clearly visible</span></div>
+          <div class="status status--possible"><b>possible</b><span>ambiguous, worth flagging</span></div>
+          <div class="status status--none"><b>none</b><span>no visual evidence</span></div>
+        </div>
+
+        <div class="schema__cols">
+          <div class="card glass reveal">
+            <h3>Status fields</h3>
+            <ul class="ticks">
+              <li><code>algae_status</code></li>
+              <li><code>waste_status</code></li>
+              <li><code>fauna_status</code></li>
+              <li><code>structure_status</code></li>
+            </ul>
+          </div>
+          <div class="card glass reveal">
+            <h3>ROV equipment, kept separate</h3>
+            <p>A tether or cable is never mistaken for debris or a fixed structure.</p>
+            <ul class="ticks">
+              <li><code>rov_equipment_status</code> — none / possible / clear</li>
+              <li><code>rov_equipment_type</code> — tether / cable / robot_part / other</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- tech / models -->
+    <section class="section section--band band-tint" id="tech">
+      <div class="section__head reveal">
+        <span class="eyebrow">Under the hood</span>
+        <h2>Two models, both local.</h2>
+      </div>
+      <div class="cards">
+        <article class="card glass reveal">
+          <div class="card__icon">🧬</div>
+          <h3>DINOv3 — novelty</h3>
+          <p>Measures how visually different each frame is, so the selector keeps novel views and skips near-duplicates.</p>
+          <p class="muted"><code>facebook/dinov3-vits16</code> · ViT-S/16 · ≈ 90 MB</p>
+        </article>
+        <article class="card glass reveal">
+          <div class="card__icon">👁️</div>
+          <h3>Vision–Language Model</h3>
+          <p>Describes each keyframe and fills the structured annotation, served on Apple Metal via <code>mlx-vlm</code>.</p>
+          <p class="muted"><code>Qwen3-VL-4B-Instruct-4bit</code> · ≈ 2.5 GB</p>
+        </article>
+        <article class="card glass reveal">
+          <div class="card__icon">🛠️</div>
+          <h3>Stack</h3>
+          <p>Python 3.13, PyTorch, Transformers, OpenCV and MLX — pinned in <code>pyproject.toml</code>.</p>
+          <p class="muted">macOS · Apple Silicon · MIT licensed</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- get started -->
+    <section class="section" id="start">
+      <div class="section__head reveal">
+        <span class="eyebrow">Get started</span>
+        <h2>Up and running in three steps.</h2>
+      </div>
+      <div class="terminal glass reveal">
+        <div class="terminal__bar">
+          <span></span><span></span><span></span>
+          <em>bash</em>
+        </div>
+        <pre class="terminal__body"><code><span class="c-com"># 1 · Clone</span>
+<span class="c-pmt">$</span> git clone https://github.com/ferdagainagainagain/rov-seabed-inspection.git
+<span class="c-pmt">$</span> cd rov-seabed-inspection
+
+<span class="c-com"># 2 · Create and activate a virtual environment</span>
+<span class="c-pmt">$</span> python3 -m venv .venv && source .venv/bin/activate
+
+<span class="c-com"># 3 · Install the project and its pinned dependencies</span>
+<span class="c-pmt">$</span> pip install --upgrade pip
+<span class="c-pmt">$</span> pip install -e .</code></pre>
+      </div>
+      <p class="note glass reveal">
+        <strong>Requirements:</strong> macOS on Apple Silicon (M-series) with Metal. The VLM stage uses
+        <code>mlx-vlm</code>, so run it from a normal macOS terminal. Tested with Python&nbsp;3.13.
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div>
+        <span class="nav__logo" aria-hidden="true">◐</span>
+        <strong>ROV Seabed Inspection</strong>
+        <p class="muted">Built for the Computer Vision and Pattern Recognition MSc course at USI Lugano.</p>
+      </div>
+      <nav class="footer__links">
+        <a href="https://github.com/ferdagainagainagain/rov-seabed-inspection" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m" target="_blank" rel="noopener">DINOv3</a>
+        <a href="https://github.com/Blaizzy/mlx-vlm" target="_blank" rel="noopener">mlx-vlm</a>
+      </nav>
+    </div>
+    <p class="footer__fine muted">MIT licensed · Conservative, high-recall, human-in-the-loop.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
